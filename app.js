@@ -82,7 +82,7 @@ function cakeMarkup(cakeId, targetLabel) {
     return `<span class="placed-candle" style="--candle:${colour.hex};left:${position}%" aria-label="${colour.word} candle">🕯</span>`;
   }).join('');
   return `<div id="${cakeId}" class="cake-art" data-cake-target data-drop-target="${cakeId}" tabindex="0" aria-label="${targetLabel}">
-    <img src="assets/cake-base.png" alt="plain sponge cake on a plate" />
+    <img src="cake-base.png" alt="plain sponge cake on a plate" />
     <span class="frosting" style="--frosting:${frosting}"></span><span class="sprinkle-layer" aria-hidden="true">✦　•　✦　•</span>
     <span class="placed-candles">${candles}</span></div>`;
 }

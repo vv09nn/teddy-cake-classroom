@@ -27,7 +27,7 @@
         <div class="intro-copy">
           <p class="kicker">TODAY’S LITTLE ADVENTURE · 今日小任务</p>
           <h1 id="intro-title">Let’s make a cake!</h1>
-          <p>跟小熊一起选食材、搅拌、切草莓、涂颜色，最后插上蜡烛。</p>
+          <p>先听听客人的订单，再一起做蛋糕、选水果、涂颜色，最后把蛋糕送出去。</p>
           <button id="start-button" class="big-action" type="button">Start! 开始做蛋糕 <span aria-hidden="true">→</span></button>
           <p class="soft-note">可以说、跟读、指一指，或只是操作。每一种回应都很棒。</p>
         </div>
@@ -37,8 +37,16 @@
         </div>
       </section>
 
+      <section id="order-stage" class="game-stage cooking-stage order-stage" hidden aria-labelledby="order-title">
+        <div class="stage-topline"><span class="stage-number">1</span><div><p class="kicker">TEDDY’S BAKERY · 小熊蛋糕店</p><h2 id="order-title">Who is the customer?</h2></div></div>
+        <p class="one-job">先选一位客人，听听她想要什么样的蛋糕。可以只听、指一指，也可以试着说出颜色和数字。</p>
+        <div id="order-list" class="order-list" aria-label="客人订单"></div>
+        <p id="order-reminder" class="order-reminder">Pick a customer. Then we will make their cake.</p>
+        <button id="to-ingredients" class="big-action stage-next" type="button" data-next="ingredients" disabled>Start the order! 开始做订单 <span aria-hidden="true">→</span></button>
+      </section>
+
       <section id="ingredient-stage" class="game-stage cooking-stage" hidden aria-labelledby="ingredients-title">
-        <div class="stage-topline"><span class="stage-number">1</span><div><p class="kicker">MAKE THE BATTER · 做蛋糕糊</p><h2 id="ingredients-title">Find the ingredients!</h2></div><span id="ingredient-count" class="score-pill">0 / 3</span></div>
+        <div class="stage-topline"><span class="stage-number">2</span><div><p class="kicker">MAKE THE BATTER · 做蛋糕糊</p><h2 id="ingredients-title">Find the ingredients!</h2></div><span id="ingredient-count" class="score-pill">0 / 3</span></div>
         <p class="one-job">只做一件事：选食材。需要时再点右上角显示英文，或点 🔊 听读音。</p>
         <div id="ingredient-list" class="ingredient-list"></div>
         <p id="ingredient-hint" class="stage-hint">看一看，选一个食材。</p>
@@ -46,7 +54,7 @@
       </section>
 
       <section id="mix-stage" class="game-stage cooking-stage mix-stage" hidden aria-labelledby="mix-title">
-        <div class="stage-topline"><span class="stage-number">2</span><div><p class="kicker">STIR, STIR, STIR · 搅一搅</p><h2 id="mix-title">Mix the batter!</h2></div><span id="stir-count" class="score-pill">0 / 6</span></div>
+        <div class="stage-topline"><span class="stage-number">3</span><div><p class="kicker">STIR, STIR, STIR · 搅一搅</p><h2 id="mix-title">Mix the batter!</h2></div><span id="stir-count" class="score-pill">0 / 6</span></div>
         <p class="one-job">抓住打蛋器绕圈移动；触屏时轻点打蛋器也可以。</p>
         <div class="mix-play-area">
           <span class="mix-spark spark-one" aria-hidden="true">✦</span><span class="mix-spark spark-two" aria-hidden="true">♥</span>
@@ -58,17 +66,24 @@
       </section>
 
       <section id="slice-stage" class="game-stage cooking-stage slice-stage" hidden aria-labelledby="slice-title">
-        <div class="stage-topline"><span class="stage-number">3</span><div><p class="kicker">TOPPING TIME · 做小装饰</p><h2 id="slice-title">Cut the strawberries!</h2></div><span id="slice-count" class="score-pill">0 / 3</span></div>
+        <div class="stage-topline"><span class="stage-number">4</span><div><p class="kicker">TOPPING TIME · 做小装饰</p><h2 id="slice-title">Cut the strawberries!</h2></div><span id="slice-count" class="score-pill">0 / 3</span></div>
         <p class="one-job">先点小刀，再点一颗草莓。每次只切一颗。</p>
         <div class="slice-play-area">
           <button id="knife" class="toy-knife" type="button" draggable="true" data-draggable="knife" aria-label="小刀，选择后可切草莓"><span aria-hidden="true">🔪</span><small>knife</small></button>
           <div id="fruit-board" class="fruit-board" aria-label="草莓砧板"></div>
         </div>
+        <button id="to-toppings" class="big-action stage-next" type="button" data-next="toppings" disabled>Choose toppings! 选水果装饰 <span aria-hidden="true">→</span></button>
+      </section>
+
+      <section id="topping-stage" class="game-stage cooking-stage topping-stage" hidden aria-labelledby="topping-title">
+        <div class="stage-topline"><span class="stage-number">5</span><div><p class="kicker">MY FAVOURITE TOPPINGS · 我喜欢的水果</p><h2 id="topping-title">Choose two toppings!</h2></div><span id="topping-count" class="score-pill">0 / 2</span></div>
+        <p class="one-job">选两种你喜欢的水果。选完后，可以试着说：<strong id="topping-sentence">Which topping do you like?</strong></p>
+        <div id="topping-list" class="topping-list" aria-label="水果装饰选择"></div>
         <button id="to-colours" class="big-action stage-next" type="button" data-next="colours" disabled>Now add colour! 给蛋糕上色 <span aria-hidden="true">→</span></button>
       </section>
 
       <section id="colours-stage" class="game-stage cooking-stage colours-stage" hidden aria-labelledby="colours-title">
-        <div class="stage-topline"><span class="stage-number">4</span><div><p class="kicker">PAINT THE ICING · 选颜色</p><h2 id="colours-title">Make the cake colourful!</h2></div><span id="colour-count" class="score-pill">Choose a colour</span></div>
+        <div class="stage-topline"><span class="stage-number">6</span><div><p class="kicker">PAINT THE ICING · 选颜色</p><h2 id="colours-title">Make the cake colourful!</h2></div><span id="colour-count" class="score-pill">Choose a colour</span></div>
         <p class="one-job">点一下色块，或拖色块到蛋糕上。可以选一种，也可以混几种。</p>
         <div class="colour-game-layout">
           <div id="colour-palette" class="colour-palette" aria-label="颜色选择"></div>
@@ -78,26 +93,37 @@
       </section>
 
       <section id="candle-stage" class="game-stage cooking-stage candle-stage" hidden aria-labelledby="candles-title">
-        <div class="stage-topline"><span class="stage-number">5</span><div><p class="kicker">COUNT THE CANDLES · 数一数</p><h2 id="candles-title">How many candles?</h2></div><span id="candle-count" class="score-pill">0 / 1</span></div>
+        <div class="stage-topline"><span class="stage-number">7</span><div><p class="kicker">COUNT THE CANDLES · 数一数</p><h2 id="candles-title">How many candles?</h2></div><span id="candle-count" class="score-pill">0 / 1</span></div>
         <p class="one-job">先选数量和颜色，再把蜡烛拖到蛋糕上；触屏可“点蜡烛，再点蛋糕”。</p>
         <div id="number-palette" class="number-palette" aria-label="蜡烛数量"></div>
         <div class="candle-game-layout">
           <div class="candle-tools"><div id="candle-colours" class="candle-colours" aria-label="蜡烛颜色"></div><button id="drag-candle" class="drag-candle" type="button" draggable="true" data-draggable="candle" aria-label="蜡烛，可拖动"><span aria-hidden="true">🕯</span><strong id="chosen-candle-word">candle</strong></button></div>
           <div id="candle-cake-wrap" class="cake-wrap" data-drop-target="candle-cake"></div>
         </div>
+        <p id="candle-order-hint" class="stage-hint">Check the order card. Is it ready?</p>
         <button id="to-celebrate" class="big-action stage-next" type="button" data-next="celebrate" disabled>Ta-da! See my cake! 看看我的蛋糕 <span aria-hidden="true">→</span></button>
       </section>
 
       <section id="celebration-stage" class="game-stage celebration-stage" hidden aria-labelledby="celebration-title">
         <span class="celebrate-doodle star-left" aria-hidden="true">★</span><span class="celebrate-doodle heart-top" aria-hidden="true">♥</span><span class="celebrate-doodle star-right" aria-hidden="true">★</span>
-        <div class="celebration-copy"><p class="kicker">TEDDY’S BIG CHEER</p><h2 id="celebration-title">You are a Cake Star!</h2><p>舟舟，你做出了一个漂亮的小蛋糕！</p><div class="say-options"><span>可以选一句说：</span><button type="button" data-speak="My cake!">My cake! 🔊</button><button type="button" data-speak="I made it!">I made it! 🔊</button></div><button class="quiet-button" type="button" id="celebrate-again">Make another cake 再做一个</button></div>
+        <div class="celebration-copy"><p class="kicker">TEDDY’S BIG CHEER</p><h2 id="celebration-title">You are a Cake Star!</h2><p id="final-order-message">You made a beautiful cake!</p><div class="say-options"><span>可以选一句说：</span><button type="button" data-speak="Here you are!">Here you are! 🔊</button><button type="button" data-speak="I made it!">I made it! 🔊</button><button type="button" data-speak="Thank you!">Thank you! 🔊</button></div><button class="quiet-button" type="button" id="celebrate-again">Make another cake 再做一个</button></div>
         <div class="final-scene"><img src="teddy-chef.png" alt="开心的厨师小熊" /><div id="final-cake-wrap" class="final-cake-wrap"></div><div class="cheer-stars" aria-hidden="true">★ ★ ★</div></div>
       </section>
     </main>
 
     <dialog id="alphabet-dialog" aria-labelledby="alphabet-title">
-      <div class="dialog-head"><div><p class="kicker">LETTER CORNER</p><h2 id="alphabet-title">Aa 字母小屋</h2><p>可以单独点一个字母听读音；下面再玩大小写配对。</p></div><button id="close-alphabet" class="icon-button" type="button" aria-label="关闭字母小屋">×</button></div>
-      <section><h3>Listen to one letter · 单独抽字母</h3><div id="letter-picker" class="letter-picker"></div></section>
+      <div class="dialog-head"><div><p class="kicker">LETTER CORNER</p><h2 id="alphabet-title">Aa 字母小屋</h2><p>选一个字母，听一听，再沿着淡淡的字母慢慢描一描。</p></div><button id="close-alphabet" class="icon-button" type="button" aria-label="关闭字母小屋">×</button></div>
+      <section id="letter-trace-stage" class="letter-trace-stage" aria-labelledby="trace-title">
+        <div class="trace-heading"><div><h3 id="trace-title">Big letter time · 大字母时间</h3><p>先听，再用手指或鼠标慢慢描。写得慢一点也很棒。</p></div><div class="trace-actions"><button type="button" class="trace-step" data-trace-previous aria-label="上一个字母">←</button><button id="trace-speak" class="trace-speak" type="button" aria-label="听字母 A">🔊 <span id="trace-speak-word">Hear A</span></button><button type="button" class="trace-step" data-trace-next aria-label="下一个字母">→</button></div></div>
+        <div class="trace-mode-switch" role="group" aria-label="选择练习方式"><button id="trace-mode-both" type="button" data-trace-mode="both" aria-pressed="true"><strong>Aa</strong> 一起看</button><button id="trace-mode-upper" type="button" data-trace-mode="upper" aria-pressed="false"><strong>A</strong> 只练大写</button><button id="trace-mode-lower" type="button" data-trace-mode="lower" aria-pressed="false"><strong>a</strong> 只练小写</button></div>
+        <div id="trace-letter-display" class="trace-letter-display" aria-live="polite">
+          <article id="trace-uppercase-card" class="trace-writing-card"><p>CAPITAL · 大写</p><div class="trace-writing-surface"><span id="trace-uppercase" class="trace-glyph" aria-hidden="true">A</span><canvas id="upper-trace-canvas" class="trace-canvas" data-trace-canvas="upper" aria-label="描写大写字母 A"></canvas></div></article>
+          <article id="trace-lowercase-card" class="trace-writing-card"><p>small · 小写 <span class="handwriting-tag">handwriting · 手写体</span></p><div class="trace-writing-surface"><span id="trace-lowercase" class="trace-glyph trace-handwriting-glyph" aria-hidden="true">ɑ</span><canvas id="lower-trace-canvas" class="trace-canvas" data-trace-canvas="lower" aria-label="描写小写字母 a"></canvas></div></article>
+        </div>
+        <p id="trace-print-note" class="trace-print-note" hidden>先认识印刷体 a；描写时跟着单层手写体 ɑ。</p>
+        <div class="trace-footer"><p id="trace-message" role="status" aria-live="polite">Pick a letter. Then trace it with your finger.</p><button id="trace-reset" class="trace-reset" type="button">↻ Write again 再写一次</button></div>
+      </section>
+      <section class="letter-choose"><h3>Pick a letter · 选一个字母</h3><div id="letter-picker" class="letter-picker"></div></section>
       <section class="match-section"><div class="dialog-score"><h3>Match uppercase and lowercase</h3><span id="letter-score" class="score-pill">0 / 6</span></div><p>先点一个大写字母，再找它的小写朋友。</p><div class="letter-match-grid"><div><h4>CAPITAL</h4><div id="upper-letters" class="letter-row"></div></div><div><h4>small</h4><div id="lower-letters" class="letter-row"></div></div></div></section>
     </dialog>
     <script type="module" src="app.js"></script>

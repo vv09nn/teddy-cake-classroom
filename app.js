@@ -29,6 +29,8 @@ const ORDER_CARDS = [
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const MATCH_LETTERS = ['A', 'M', 'S', 'T', 'B', 'C'];
 const STIR_GOAL = 6;
+const UPPER_TRACE_STROKES = { A: 3, B: 2, C: 1, D: 2, E: 4, F: 3, G: 2, H: 3, I: 1, J: 1, K: 3, L: 2, M: 4, N: 3, O: 1, P: 2, Q: 2, R: 3, S: 1, T: 2, U: 1, V: 2, W: 4, X: 2, Y: 3, Z: 3 };
+const LOWER_TRACE_STROKES = { A: 2, B: 2, C: 1, D: 2, E: 1, F: 2, G: 2, H: 2, I: 2, J: 2, K: 3, L: 1, M: 1, N: 1, O: 1, P: 2, Q: 2, R: 2, S: 1, T: 2, U: 1, V: 2, W: 1, X: 2, Y: 2, Z: 1 };
 
 export function cakeProgress(items) {
   return new Set(items.filter((item) => INGREDIENTS.some((ingredient) => ingredient.id === item))).size;
@@ -56,6 +58,17 @@ export function nextAlphabetLetter(letter, direction = 1) {
 export function handwritingLowercaseGlyph(letter) {
   const lowercase = normaliseAlphabetLetter(letter).toLowerCase();
   return ({ a: 'ɑ', g: 'ɡ' })[lowercase] ?? lowercase;
+}
+export function traceStrokeGoal(letter, traceCase = 'upper') {
+  const normalised = normaliseAlphabetLetter(letter);
+  return (traceCase === 'lower' ? LOWER_TRACE_STROKES : UPPER_TRACE_STROKES)[normalised] ?? 2;
+}
+export function traceMinimumInkDistance(shortSide = 300) {
+  return Math.max(90, Math.round(Number(shortSide) * 0.72));
+}
+export function isTraceComplete({ letter, traceCase = 'upper', strokes = 0, inkDistance = 0, shortSide = 300 }) {
+  return Number(strokes) >= traceStrokeGoal(letter, traceCase)
+    && Number(inkDistance) >= traceMinimumInkDistance(shortSide);
 }
 export function nextPrompt({ ingredients, mixed, decorated }) {
   if (!canMix(ingredients)) return 'ingredients';
@@ -222,6 +235,27 @@ function setTraceMessage(message) {
   if (target) target.textContent = message;
 }
 
+function traceCaseForCanvas(canvas) {
+  return canvas?.dataset?.traceCanvas === 'lower' ? 'lower' : 'upper';
+}
+
+function updateTraceProgress(canvas) {
+  const traceCase = traceCaseForCanvas(canvas);
+  const target = document.querySelector(traceCase === 'lower' ? '#lower-trace-progress' : '#upper-trace-progress');
+  if (!target) return;
+  const goal = traceStrokeGoal(state.traceLetter, traceCase);
+  const strokes = Math.min(Number(canvas.traceStrokes) || 0, goal);
+  target.textContent = canvas.traceComplete ? '完成！' : `第 ${strokes} / ${goal} 笔`;
+}
+
+function drawStoredTraceInk(canvas) {
+  const bounds = canvas?.getBoundingClientRect?.();
+  if (!bounds?.width || !bounds?.height) return;
+  for (const segment of canvas.traceInk ?? []) {
+    drawTraceLine(canvas, { x: segment.from.x * bounds.width, y: segment.from.y * bounds.height }, { x: segment.to.x * bounds.width, y: segment.to.y * bounds.height });
+  }
+}
+
 function drawTraceGuide(canvas, letter, handwriting = false) {
   if (!canvas?.getContext || !canvas.getBoundingClientRect) return;
   const bounds = canvas.getBoundingClientRect();
@@ -253,6 +287,7 @@ function drawTraceGuide(canvas, letter, handwriting = false) {
   context.fillStyle = '#fffdf5';
   context.font = '900 13px "Arial Rounded MT Bold", sans-serif';
   context.fillText('1', Math.max(19, bounds.width * 0.12), Math.max(19, bounds.height * 0.14));
+  drawStoredTraceInk(canvas);
 }
 
 function drawTraceLine(canvas, from, to) {
@@ -274,15 +309,42 @@ function tracePoint(event, canvas) {
   return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
 }
 
+function resetTraceCanvas(canvas, letter, handwriting) {
+  canvas.traceInk = [];
+  canvas.traceStrokes = 0;
+  canvas.traceInkDistance = 0;
+  canvas.traceStrokeDistance = 0;
+  canvas.traceComplete = false;
+  canvas.traceLastPoint = null;
+  canvas.closest?.('.trace-writing-surface')?.classList.remove('is-trace-complete');
+  drawTraceGuide(canvas, letter, handwriting);
+  updateTraceProgress(canvas);
+}
+
+function finishTraceLetter(canvas) {
+  const surface = canvas.closest?.('.trace-writing-surface');
+  canvas.traceComplete = true;
+  surface?.classList.add('is-trace-complete');
+  updateTraceProgress(canvas);
+  const traceCase = traceCaseForCanvas(canvas);
+  const displayLetter = traceCase === 'lower' ? handwritingLowercaseGlyph(state.traceLetter) : state.traceLetter;
+  setTraceMessage(`Ta-da! Teddy helped turn your ${displayLetter} into a beautiful letter. 你写完啦，小熊帮你变成漂亮的 ${displayLetter}！`);
+}
+
 function setUpTraceCanvas(canvas) {
   if (!canvas || canvas.dataset.traceReady === 'true') return;
   canvas.dataset.traceReady = 'true';
   canvas.addEventListener('pointerdown', (event) => {
+    if (canvas.traceComplete) {
+      setTraceMessage('Beautiful letter finished! 点“再写一次”或选下一个字母。');
+      return;
+    }
     const point = tracePoint(event, canvas);
     if (!point) return;
     event.preventDefault();
     canvas.traceLastPoint = point;
     canvas.traceMoved = false;
+    canvas.traceStrokeDistance = 0;
     canvas.setPointerCapture?.(event.pointerId);
   });
   canvas.addEventListener('pointermove', (event) => {
@@ -290,33 +352,63 @@ function setUpTraceCanvas(canvas) {
     const point = tracePoint(event, canvas);
     if (!point) return;
     event.preventDefault();
+    const bounds = canvas.getBoundingClientRect();
+    const distance = Math.hypot(point.x - canvas.traceLastPoint.x, point.y - canvas.traceLastPoint.y);
+    if (distance < 0.5) return;
     drawTraceLine(canvas, canvas.traceLastPoint, point);
+    canvas.traceInk ??= [];
+    canvas.traceInk.push({
+      from: { x: canvas.traceLastPoint.x / bounds.width, y: canvas.traceLastPoint.y / bounds.height },
+      to: { x: point.x / bounds.width, y: point.y / bounds.height },
+    });
+    canvas.traceInkDistance = (canvas.traceInkDistance ?? 0) + distance;
+    canvas.traceStrokeDistance += distance;
     canvas.traceLastPoint = point;
     canvas.traceMoved = true;
   });
   const finishTrace = () => {
     if (!canvas.traceLastPoint) return;
     canvas.traceLastPoint = null;
-    if (canvas.traceMoved) setTraceMessage(`Careful writing! You traced ${state.traceLetter} ${state.traceLetter.toLowerCase()}. 真认真，写得很棒！`);
+    if (!canvas.traceMoved) return;
+    const bounds = canvas.getBoundingClientRect();
+    const shortSide = Math.min(bounds.width, bounds.height);
+    if (canvas.traceStrokeDistance < Math.max(14, shortSide * 0.055)) {
+      setTraceMessage('再多画一点点，让小熊看清你的这一笔。');
+      return;
+    }
+    canvas.traceStrokes = (canvas.traceStrokes ?? 0) + 1;
+    const traceCase = traceCaseForCanvas(canvas);
+    if (isTraceComplete({ letter: state.traceLetter, traceCase, strokes: canvas.traceStrokes, inkDistance: canvas.traceInkDistance, shortSide })) {
+      finishTraceLetter(canvas);
+      return;
+    }
+    updateTraceProgress(canvas);
+    const goal = traceStrokeGoal(state.traceLetter, traceCase);
+    setTraceMessage(`这一笔会留在纸上。现在是第 ${Math.min(canvas.traceStrokes, goal)} / ${goal} 笔，慢慢继续就好。`);
   };
   canvas.addEventListener('pointerup', finishTrace);
   canvas.addEventListener('pointercancel', finishTrace);
 }
 
-function refreshTraceCanvases() {
+function refreshTraceCanvases({ reset = false } = {}) {
   const pair = letterPair(state.traceLetter);
   [['#upper-trace-canvas', pair.upper, false], ['#lower-trace-canvas', handwritingLowercaseGlyph(pair.lower), true]].forEach(([selector, letter, handwriting]) => {
     const canvas = document.querySelector(selector);
     if (!canvas) return;
     setUpTraceCanvas(canvas);
-    drawTraceGuide(canvas, letter, handwriting);
+    if (reset) resetTraceCanvas(canvas, letter, handwriting);
+    else {
+      drawTraceGuide(canvas, letter, handwriting);
+      updateTraceProgress(canvas);
+    }
   });
 }
 
-function requestTraceCanvasRefresh() {
+function requestTraceCanvasRefresh(options = {}) {
   if (typeof window === 'undefined') return;
-  if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(refreshTraceCanvases);
-  else refreshTraceCanvases();
+  const refresh = () => refreshTraceCanvases(options);
+  if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(refresh);
+  else refresh();
 }
 
 function chooseTraceLetter(letter, shouldSpeak = true) {
@@ -333,6 +425,8 @@ function renderAlphabet() {
   document.querySelector('#letter-picker').innerHTML = LETTERS.map((letter) => `<button class="letter-picker-button ${pair.upper === letter ? 'is-current' : ''}" data-trace-letter="${letter}" data-letter-say="${letter}" type="button" aria-label="选择字母 ${letter} ${letter.toLowerCase()}" aria-pressed="${pair.upper === letter}"><strong>${letter}</strong><small>${letter.toLowerCase()}</small></button>`).join('');
   document.querySelector('#trace-uppercase').textContent = pair.upper;
   document.querySelector('#trace-lowercase').textContent = lowercaseGlyph;
+  document.querySelector('#trace-uppercase-finished').textContent = pair.upper;
+  document.querySelector('#trace-lowercase-finished').textContent = lowercaseGlyph;
   document.querySelector('#trace-uppercase-card').hidden = state.traceMode === 'lower';
   document.querySelector('#trace-lowercase-card').hidden = state.traceMode === 'upper';
   document.querySelector('#trace-letter-display').dataset.traceMode = state.traceMode;
@@ -355,7 +449,7 @@ function renderAlphabet() {
   const shuffled = [...MATCH_LETTERS].sort((left, right) => (left > right ? -1 : 1));
   document.querySelector('#lower-letters').innerHTML = shuffled.map((letter) => `<button type="button" class="letter-card ${state.matchedLetters.has(letter) ? 'is-matched' : ''}" data-letter-lower="${letter.toLowerCase()}"><strong>${letter.toLowerCase()}</strong><small>small ${letter.toLowerCase()}</small><span data-speak="${letter}" class="letter-sound" role="button" tabindex="0">🔊</span></button>`).join('');
   document.querySelector('#letter-score').textContent = `${state.matchedLetters.size} / ${MATCH_LETTERS.length}`;
-  requestTraceCanvasRefresh();
+  requestTraceCanvasRefresh({ reset: true });
 }
 
 function renderFinal() {
@@ -467,7 +561,7 @@ function initialise() {
     if (event.target.closest('#trace-speak')) { say(state.traceLetter); setTraceMessage(`Listen: ${state.traceLetter}. You can say it, or just listen. 听一听就很好。`); return; }
     if (event.target.closest('[data-trace-previous]')) { chooseTraceLetter(nextAlphabetLetter(state.traceLetter, -1)); return; }
     if (event.target.closest('[data-trace-next]')) { chooseTraceLetter(nextAlphabetLetter(state.traceLetter, 1)); return; }
-    if (event.target.closest('#trace-reset')) { refreshTraceCanvases(); setTraceMessage(`Fresh page! Trace ${state.traceLetter} one more time. 重新慢慢写一次。`); return; }
+    if (event.target.closest('#trace-reset')) { refreshTraceCanvases({ reset: true }); setTraceMessage(`Fresh page! Trace ${state.traceLetter} one more time. 重新慢慢写一次。`); return; }
     const speak = event.target.closest('[data-speak]'); if (speak) { event.stopPropagation(); say(speak.dataset.speak); setMessage(`Listen: ${speak.dataset.speak}. 你可以跟读，也可以只听一听。`); return; }
     const ingredient = event.target.closest('[data-ingredient]'); if (ingredient) { addIngredient(ingredient.dataset.ingredient); return; }
     const order = event.target.closest('[data-order]'); if (order) { chooseOrder(order.dataset.order); return; }
